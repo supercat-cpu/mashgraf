@@ -1,3 +1,7 @@
 /Debug
 /Release
 /.vs
+/mashgraf/Debug
+/mashgraf/Release
+/mashgraf/*.user
+/mashgraf/x64
