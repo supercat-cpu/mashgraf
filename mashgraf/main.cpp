@@ -136,8 +136,22 @@ void DrawScene()
 	glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, c_specular);
 	glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, c_ambient);
 	glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 10);
-	glutSolidCube(29);
+	//glutSolidCube(29);
+	//glutSolidSphere(29, 10, 10);
+	glutSolidIcosahedron();
 	glPopMatrix();
+}
+
+void RenderSurface()
+{
+	//glTranslatef(0, -50, 0);
+	glBegin(GL_QUADS);
+	glColor4d(125, 249, 255, 0.3);
+	glVertex3d(40 * 3, -20, 40 * 3);
+	glVertex3d(-40 * 3, -20, 40 * 3);
+	glVertex3d(-40 * 3, -20, -40 * 3);
+	glVertex3d(40 * 3, -20, -40 * 3);
+	glEnd();
 }
 
 void Display()
@@ -157,8 +171,35 @@ void Display()
 		glEnable(GL_LIGHTING);
 		DrawScene();
 
-		Billboards();
+		glEnable(GL_STENCIL_TEST);
+		glStencilFunc(GL_ALWAYS, 1, 0);
+		glStencilOp(GL_ZERO, GL_ZERO, GL_REPLACE);
+		glDepthMask(GL_FALSE);
+		glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
 
+		RenderSurface();
+		glDepthMask(GL_TRUE);
+		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+
+		glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+		glStencilFunc(GL_EQUAL, 1, 1);
+		glPushMatrix();
+		glScaled(1, -1, 1);
+
+		glLightfv(GL_LIGHT0, GL_POSITION, l_position);
+		DrawScene();
+		glPopMatrix();
+
+		glDisable(GL_STENCIL_TEST);
+
+		glDisable(GL_LIGHTING);
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		RenderSurface();
+		glDisable(GL_BLEND);
+
+		Billboards();
+	
 	glFlush();
 	glutSwapBuffers();
 }
@@ -170,7 +211,6 @@ void Motion_mouse(int x, int y)
 	if (mouse_state == GLUT_DOWN) {
 		if (mouse_button == GLUT_LEFT_BUTTON) {
 			y_angle += dx / 3;
-			if (y_angle < 0) y_angle += 360;
 			if (y_angle < 0) y_angle += 360;
 			if (y_angle >= 360) y_angle -= 360;
 			x_angle += dy / 3;
@@ -199,7 +239,6 @@ void init() {
 	glLightfv(GL_LIGHT0, GL_POSITION, l_position);
 	glEnable(GL_LIGHTING);
 	glEnable(GL_LIGHT0);
-
 		glEnable(GL_DEPTH_TEST);
 
 		unsigned char* tex_bits = NULL;
@@ -223,12 +262,11 @@ void main(int argc, char* argv[])
 {
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH | GLUT_STENCIL);
-	glutInitWindowSize(Width, Height);
 	glutCreateWindow("My Prog");
 	init();
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	glOrtho(-150, 150, -150, 150, -150, 150);
+	 glOrtho(-150, 150, -150, 150, -150, 150);
 	glutDisplayFunc(Display);
 	glutMouseFunc(Click_mouse);
 	glutMotionFunc(Motion_mouse);
