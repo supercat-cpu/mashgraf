@@ -5,6 +5,18 @@
 #include <gl\glut.h>
 #include"BmpLoad.h"
 
+#pragma pack(1) // говорим что проьтно упакуем
+struct Vertex // определяем что такое вершина
+{
+	double x, y, z;
+};
+
+struct Vertex2 // определяем что такое вершина
+{
+	double x, y;
+};
+#pragma pack()
+
 GLfloat l_ambient[] = { 0.0, 0.0, 0.0, 1.0 };
 GLfloat l_diffuse[] = { 1.0, 1.0, 1.0, 1.0 };
 GLfloat l_specular[] = { 1.0, 1.0, 1.0, 1.0 };
@@ -23,6 +35,12 @@ const double bsize = 20.0;
 double billbs[3];
 
 GLuint texture;
+
+inline Vertex RotateY(double angle, const Vertex2 v)
+{
+	return Vertex{ cos(angle) * v.x,v.y,sin(angle) * v.x };
+}
+
 
 unsigned char* ConstructTexture(int* w, int* h)
 {
@@ -352,6 +370,14 @@ void Key(unsigned char key, int x, int y)
 	}
 }
 
+void timer(int i = 0)
+{
+	angle += 10;
+	Display();
+	glutTimerFunc(40, timer, 0);
+}
+
+
 void main(int argc, char* argv[])
 {
 	glutInit(&argc, argv);
@@ -366,5 +392,6 @@ void main(int argc, char* argv[])
 	glutMouseFunc(Click_mouse);
 	glutMotionFunc(Motion_mouse);
 	glutKeyboardFunc(Key);
+	timer();
 	glutMainLoop();
 }
