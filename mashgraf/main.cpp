@@ -17,41 +17,12 @@ double x_angle = 30;
 double y_angle = 0, angle = 0;
 int mouse_x = 0, mouse_y = 0, mouse_button = -1, mouse_state = GLUT_UP;
 
-const double PI = 3.14159265358979323846;
-
-#pragma pack(1) // говорим что проьтно упакуем
-struct Vertex // определяем что такое вершина
-{
-	double x, y, z;
-};
-
-struct Vertex2 // определяем что такое вершина
-{
-	double x, y;
-};
-#pragma pack()
-
-Vertex ControlPoints[] = {
- {0,-0.9, 1.0},
- {0.0,-0.9, 1.0},
- {0.8,-0.8, 1.0},
- {0.2,0.3, 1.0},
- {0.0,0.5 * 5 , 1.0 * 5},
- {0,0.8, 1.0},
- {0,0.9, 1.0}
-};
-
 const int area = 40;
 const double bsize = 20.0;
 
 double billbs[3];
 
 GLuint texture;
-
-inline Vertex RotateY(double angle, const Vertex2 v)
-{
-	return Vertex{ cos(angle) * v.x,v.y,sin(angle) * v.x };
-}
 
 unsigned char* ConstructTexture(int* w, int* h)
 {
@@ -122,6 +93,97 @@ void Billboards() {
 	glPopMatrix();
 }
 
+
+void Cub1()
+{
+	glPushMatrix();
+	GLfloat c_emissive[4] = { 0.0f, 0.4f, 0.0f, 0.0f };
+	GLfloat c_diffuse[4] = { 0.2f, 0.8f, 0.6f, 0.0f };
+	GLfloat c_specular[4] = { 0.2f, 0.6f, 0.2f, 0.0f };
+	GLfloat c_ambient[4] = { 0.1f, 0.1f, 0.1f, 0.0f };
+	glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, c_emissive);
+	glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, c_diffuse);
+	glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, c_specular);
+	glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, c_ambient);
+	glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 10);
+	glColor3b(1, 0, 0);
+	glutSolidCube(20);
+	glPopMatrix();
+}
+
+void Cub2()
+{
+	glPushMatrix();
+	GLfloat c_emissive[4] = { 0.0f, 0.4f, 0.0f, 0.0f };
+	GLfloat c_diffuse[4] = { 0.2f, 0.8f, 0.6f, 0.0f };
+	GLfloat c_specular[4] = { 0.2f, 0.6f, 0.2f, 0.0f };
+	GLfloat c_ambient[4] = { 0.1f, 0.1f, 0.1f, 0.0f };
+	glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, c_emissive);
+	glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, c_diffuse);
+	glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, c_specular);
+	glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, c_ambient);
+	glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 10);
+	glTranslated(10, 10, 0);
+	glColor3b(1, 0, 0);
+	glutSolidCube(30);
+	glPopMatrix();
+}
+
+void depth(void (*draw)())
+{
+	glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+	glEnable(GL_DEPTH_TEST);
+	glDisable(GL_STENCIL_TEST);
+	glDepthFunc(GL_ALWAYS);
+
+	draw();
+
+	glDepthFunc(GL_LESS);
+}
+void   inter(void (*first)(), void (*second)(), int face, int test)
+{
+	glEnable(GL_CULL_FACE);
+	glEnable(GL_DEPTH_TEST);
+	glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+	glCullFace(face);
+
+	first();
+
+	glDepthMask(GL_FALSE);
+	glEnable(GL_STENCIL_TEST);
+	glStencilOp(GL_KEEP, GL_KEEP, GL_INCR);
+	glStencilFunc(GL_ALWAYS, 0, 0);
+	glCullFace(GL_BACK);
+
+	second();
+
+	glStencilOp(GL_KEEP, GL_KEEP, GL_DECR);
+	glCullFace(GL_FRONT);
+
+	second();
+
+	glDepthMask(GL_TRUE);
+	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+	glStencilFunc(test, 0, 1);
+	glDisable(GL_DEPTH_TEST);
+	glCullFace(face);
+
+	first();
+
+	glDisable(GL_STENCIL_TEST);
+}
+
+void Minus()
+{
+	//glPolygonMode(GL_FRONT_AND_BACK,GL_LINE);
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_BACK);
+	glDepthFunc(GL_LESS);
+	inter(Cub2, Cub1, GL_FRONT, GL_NOTEQUAL);
+	depth(Cub1);
+	inter(Cub1, Cub2, GL_BACK, GL_EQUAL);
+}
+
 void DrawScene()
 {
 	glPushMatrix();
@@ -136,7 +198,7 @@ void DrawScene()
 	glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, c_specular);
 	glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, c_ambient);
 	glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 10);
-	//glutSolidCube(29);
+	glutSolidCube(29);
 	//glutSolidSphere(29, 10, 10);
 	glutSolidIcosahedron();
 	glPopMatrix();
@@ -165,6 +227,7 @@ void Display()
 	glTranslated(0, 0, -3 * 3);
 	glRotated(x_angle, 1, 0, 0);
 	glRotated(y_angle, 0, 1, 0);
+	if (q == 0) {
 		glEnable(GL_LIGHTING);
 		glLightfv(GL_LIGHT0, GL_POSITION, l_position);
 		glDisable(GL_LIGHTING);
@@ -172,11 +235,10 @@ void Display()
 		DrawScene();
 
 		glEnable(GL_STENCIL_TEST);
-		glStencilFunc(GL_ALWAYS, 1, 0);
+		glStencilFunc(GL_ALWAYS, 1, 1);
 		glStencilOp(GL_ZERO, GL_ZERO, GL_REPLACE);
 		glDepthMask(GL_FALSE);
 		glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
-
 		RenderSurface();
 		glDepthMask(GL_TRUE);
 		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
@@ -199,7 +261,24 @@ void Display()
 		glDisable(GL_BLEND);
 
 		Billboards();
-	
+	}
+	else {
+		//	glClearColor(0.7,0.0,0.0,0.5);
+
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+
+		glPushMatrix();
+		glTranslated(-30, 20, 0);
+		glRotated(angle, 0, 1, 1);
+		glPopMatrix();
+
+		glPushMatrix();
+		glTranslated(-30, 0, 0);
+		glRotated(angle, 0, 1, 0);
+		Minus();
+		glPopMatrix();
+
+	}
 	glFlush();
 	glutSwapBuffers();
 }
@@ -239,6 +318,7 @@ void init() {
 	glLightfv(GL_LIGHT0, GL_POSITION, l_position);
 	glEnable(GL_LIGHTING);
 	glEnable(GL_LIGHT0);
+	if (q == 0) {
 		glEnable(GL_DEPTH_TEST);
 
 		unsigned char* tex_bits = NULL;
@@ -256,19 +336,35 @@ void init() {
 			for (int i = 0; i < sizeof(billbs) / sizeof(billbs[0]); i++)
 				billbs[i] = -area + bsize + 2 * rand() * (area - bsize) / RAND_MAX;
 		}
+	}
+}
+
+void Key(unsigned char key, int x, int y)
+{
+	if (key == '\033') {
+		glutDestroyWindow(glutGetWindow());
+		exit(1);
+	}
+	if (key == ' ' && q == 0) {
+		q++;
+		init();
+		Display();
+	}
 }
 
 void main(int argc, char* argv[])
 {
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH | GLUT_STENCIL);
+	glutInitWindowSize(Width, Height);
 	glutCreateWindow("My Prog");
 	init();
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	 glOrtho(-150, 150, -150, 150, -150, 150);
+	glOrtho(-150, 150, -150, 150, -150, 150);
 	glutDisplayFunc(Display);
 	glutMouseFunc(Click_mouse);
 	glutMotionFunc(Motion_mouse);
+	glutKeyboardFunc(Key);
 	glutMainLoop();
 }
