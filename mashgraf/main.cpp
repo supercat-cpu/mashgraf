@@ -3,19 +3,11 @@
 #include <math.h>
 #include <gl\glew.h>
 #include <gl\glut.h>
+#include "BSpline.h"
+#include "Vector.h"
 #include"BmpLoad.h"
+#include"Formats.h"
 
-#pragma pack(1) // говорим что проьтно упакуем
-struct Vertex // определяем что такое вершина
-{
-	double x, y, z;
-};
-
-struct Vertex2 // определяем что такое вершина
-{
-	double x, y;
-};
-#pragma pack()
 
 GLfloat l_ambient[] = { 0.0, 0.0, 0.0, 1.0 };
 GLfloat l_diffuse[] = { 1.0, 1.0, 1.0, 1.0 };
@@ -29,6 +21,23 @@ double x_angle = 30;
 double y_angle = 0, angle = 0;
 int mouse_x = 0, mouse_y = 0, mouse_button = -1, mouse_state = GLUT_UP;
 
+const double PI = 3.14159265358979323846;
+
+double3 ControlPoints[] = {
+ double3(0,-0.9, 1.0),
+ double3(0.0,-0.9, 1.0),
+ double3(0.8,-0.8, 1.0),
+ double3(0.2,0.3, 1.0),
+ double3(0.0,0.5 * 5 , 1.0 * 5),
+ double3(0,0.8, 1.0),
+ double3(0,0.9, 1.0)
+
+};
+
+int N = 25;
+
+BSpline<double3> bsp(N, OpenBasis, sizeof(ControlPoints) / sizeof(ControlPoints[0]), 3, 0, 1);
+
 const int area = 40;
 const double bsize = 20.0;
 
@@ -36,11 +45,20 @@ double billbs[3];
 
 GLuint texture;
 
-inline Vertex RotateY(double angle, const Vertex2 v)
+inline void glVertex(const double2 v)
 {
-	return Vertex{ cos(angle) * v.x,v.y,sin(angle) * v.x };
+	glVertex2d(30 * v.x, 30 * v.y);
 }
 
+inline void glVertex(const double3 v)
+{
+	glVertex3d(30 * v.x, 30 * v.y, 30 * v.z);
+}
+
+inline double3 RotateY(double angle, const double2 v)
+{
+	return double3(cos(angle) * v.x, v.y, sin(angle) * v.x);
+}
 
 unsigned char* ConstructTexture(int* w, int* h)
 {
@@ -111,6 +129,31 @@ void Billboards() {
 	glPopMatrix();
 }
 
+void Nurbs()
+{
+	glPushMatrix();
+	glTranslated(-40, 0, 0);
+	GLfloat t_emissive[4] = { 0.0f, 0.8f, 0.7f, 0.0f };
+	GLfloat t_diffuse[4] = { 0.1f, 0.9f, 0.8f, 0.0f };
+	GLfloat t_specular[4] = { 0.1f, 0.6f, 0.6f, 0.0f };
+	GLfloat t_ambient[4] = { 0.1f, 0.1f, 0.1f, 0.0f };
+	glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, t_emissive);
+	glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, t_diffuse);
+	glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, t_specular);
+	glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, t_ambient);
+	glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 10);
+
+	for (int j = 1; j < bsp.GetTesselation() - 2; j++) {
+		glBegin(GL_QUAD_STRIP);
+		for (int i = 0; i <= N; i++) {
+			double phi = (i < N) ? (2 * PI * i / N) : (0);
+			glVertex(RotateY(phi, bsp.GetPoint(j).Perspective()));
+			glVertex(RotateY(phi, bsp.GetPoint(j + 1).Perspective()));
+		}
+		glEnd();
+	}
+	glPopMatrix();
+}
 
 void Cub1()
 {
@@ -206,6 +249,7 @@ void DrawScene()
 {
 	glPushMatrix();
 	glTranslatef(-50.0, 50.0, 50.0);
+	Nurbs();
 	glTranslatef(100.0, 0.0, -20.0);
 	GLfloat c_emissive[4] = { 0.0f, 0.4f, 0.0f, 0.0f };
 	GLfloat c_diffuse[4] = { 0.2f, 0.8f, 0.6f, 0.0f };
@@ -288,6 +332,7 @@ void Display()
 		glPushMatrix();
 		glTranslated(-30, 20, 0);
 		glRotated(angle, 0, 1, 1);
+		Nurbs();
 		glPopMatrix();
 
 		glPushMatrix();
@@ -295,7 +340,6 @@ void Display()
 		glRotated(angle, 0, 1, 0);
 		Minus();
 		glPopMatrix();
-
 	}
 	glFlush();
 	glutSwapBuffers();
@@ -337,6 +381,8 @@ void init() {
 	glEnable(GL_LIGHTING);
 	glEnable(GL_LIGHT0);
 	if (q == 0) {
+		for (int i = 0; i < sizeof(ControlPoints) / sizeof(ControlPoints[0]); i++)
+			bsp.ControlPoint(i) = ControlPoints[i];
 		glEnable(GL_DEPTH_TEST);
 
 		unsigned char* tex_bits = NULL;
@@ -376,7 +422,6 @@ void timer(int i = 0)
 	Display();
 	glutTimerFunc(40, timer, 0);
 }
-
 
 void main(int argc, char* argv[])
 {

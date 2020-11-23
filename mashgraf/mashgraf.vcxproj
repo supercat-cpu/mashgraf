@@ -20,11 +20,14 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BmpLoad.cpp" />
+    <ClCompile Include="BSpline.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BmpLoad.h" />
+    <ClInclude Include="BSpline.h" />
     <ClInclude Include="Formats.h" />
+    <ClInclude Include="Vector.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{79A696A6-DF2E-4327-8D04-A53018CFCF98}</ProjectGuid>
