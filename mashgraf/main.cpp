@@ -17,8 +17,8 @@ GLfloat l_position[] = { -4.0, 4.0, -4.0, 0.0 };
 // Экран
 int q = 0;
 GLint Width = 512, Height = 512;
-double x_angle = 30;
-double y_angle = 0, angle = 0;
+double x_angle = 30, y_angle = 0;
+double angle = 0; // Для вращающихся кусков куба
 int mouse_x = 0, mouse_y = 0, mouse_button = -1, mouse_state = GLUT_UP;
 
 // Сплайн
@@ -33,12 +33,12 @@ double3 ControlPoints[] = {
 };
 int N = 25;
 BSpline<double3> bsp(N, OpenBasis, sizeof(ControlPoints) / sizeof(ControlPoints[0]), 3, 0, 1);
-
 const int area = 40;
 const double bsize = 20.0;
 
 // Билборды
 double billbs[3];
+int offset = 0;
 
 GLuint texture;
 
@@ -91,9 +91,8 @@ void Billboards() {
 	int Count = sizeof(billbs) / sizeof(billbs[0]);
 	for (int i = 0; i < Count; i++) {
 		int index = i;
-		if (y_angle < 180) index = Count - 1 - i;
-		double x = -area + bsize + 2 * (area - bsize) * index / (Count - 1);
-		//	billbs[i] = -area + bsize + 2*rand()*(area - bsize)/RAND_MAX;
+		if (y_angle < 180) index = Count - 1 - i; 
+		double x = 40 * index / (Count - 1) + (Width / 2 + offset);
 		double z = billbs[index];
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -104,7 +103,7 @@ void Billboards() {
 		glTranslated(0, 0, -3 * area);
 		glRotated(x_angle, 1, 0, 0);
 		glRotated(y_angle, 0, 1, 0);
-		glTranslated(x, 0, z);
+		glTranslated(x, Height / 4, z);
 		glRotated(-y_angle, 0, 1, 0);
 		glRotated(-x_angle, 1, 0, 0);
 		glTranslatef(0, 50, 90);
@@ -207,7 +206,6 @@ void inter(void (*first)(int, int, int, int), int x1, int y1, int z1, int size1,
 
 void Minus(int x1, int y1, int z1, int size1, int x2, int y2, int z2, int size2)
 {
-	//glPolygonMode(GL_FRONT_AND_BACK,GL_LINE);
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
 	glDepthFunc(GL_LESS);
@@ -260,13 +258,12 @@ void RenderSurface()
 
 void Display()
 {
-	glClearColor(0.0, 0.0, 0.0, 0.0);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-
+	glClearColor(0.0, 1.0, 0.713, 0.0);
 	glClearStencil(GLint(0.0));
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
-	glTranslated(0, 0, -3 * 3);
+	glTranslated(0, 0, -9);
 	glRotated(x_angle, 1, 0, 0);
 	glRotated(y_angle, 0, 1, 0);
 	if (q == 0) {
@@ -305,8 +302,6 @@ void Display()
 		Billboards();
 	}
 	else {
-		//	glClearColor(0.7,0.0,0.0,0.5);
-
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
 		glPushMatrix();
@@ -418,6 +413,7 @@ void Key(unsigned char key, int x, int y)
 void timer(int i = 0)
 {
 	angle += 10;
+	offset = (offset - 1) % (Width);
 	Display();
 	glutTimerFunc(40, timer, 0);
 }
@@ -427,11 +423,12 @@ void main(int argc, char* argv[])
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH | GLUT_STENCIL);
 	glutInitWindowSize(Width, Height);
-	glutCreateWindow("My Prog");
+	glutCreateWindow("Funny objects");
 	init();
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	glOrtho(-150, 150, -150, 150, -150, 150);
+	//glOrtho(-150, 150, -150, 150, -150, 150);
+	glOrtho(- Width / 2, Width / 2, - Height / 2, Height / 2, -150, 150);
 	glutDisplayFunc(Display);
 	glutMouseFunc(Click_mouse);
 	glutMotionFunc(Motion_mouse);
