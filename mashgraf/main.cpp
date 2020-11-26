@@ -22,6 +22,7 @@ double angle = 0; // Для вращающихся кусков куба
 int mouse_x = 0, mouse_y = 0, mouse_button = -1, mouse_state = GLUT_UP;
 
 // Сплайн
+const int numBspl = 7;
 double3 ControlPoints[] = {
  double3(0,-0.9, 1.0),
  double3(0.0,-0.9, 1.0),
@@ -32,15 +33,12 @@ double3 ControlPoints[] = {
  double3(0,0.9, 1.0)
 };
 int N = 25;
-BSpline<double3> bsp(N, OpenBasis, sizeof(ControlPoints) / sizeof(ControlPoints[0]), 3, 0, 1);
-const int area = 40;
-const double bsize = 20.0;
+BSpline<double3> bsp(N, OpenBasis, numBspl, 3, 0, 1);
 
 // Билборды
-double billbs[3];
+const int numbBilbs = 3;
+double billbs[numbBilbs];
 int offset = 0;
-
-GLuint texture;
 
 inline void glVertex(const double2 v)
 {
@@ -80,19 +78,19 @@ unsigned char* ConstructTexture(int* w, int* h)
 }
 
 void Billboards() {
+	const int area = 40;
+	const double bsize = 20.0;
+
 	glPushMatrix();
-	glScaled(4, 4, 4);
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
-
 	glTranslatef(0, 45, 0);
 	glEnable(GL_TEXTURE_2D);
 	glColor4d(1, 1, 1, 1);
-	int Count = sizeof(billbs) / sizeof(billbs[0]);
-	for (int i = 0; i < Count; i++) {
+	for (int i = 0; i < numbBilbs; i++) {
 		int index = i;
-		if (y_angle < 180) index = Count - 1 - i; 
-		double x = 40 * index / (Count - 1) + (Width / 2 + offset);
+		if (y_angle < 180) index = numbBilbs - 1 - i;
+		double x = 40 * index / (numbBilbs - 1) + (Width / 2 + offset);
 		double z = billbs[index];
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -109,13 +107,13 @@ void Billboards() {
 		glTranslatef(0, 50, 90);
 		glBegin(GL_QUADS);
 		glTexCoord2d(1.0, 0);
-		glVertex3d(bsize / 2, 0, 0);
+		glVertex3d(10, 0, 0);
 		glTexCoord2d(1.0, 1.0);
-		glVertex3d(bsize / 2, bsize, 0);
+		glVertex3d(bsize / 2, 20, 0);
 		glTexCoord2d(0.0, 1.0);
-		glVertex3d(-bsize / 2, bsize, 0);
+		glVertex3d(-10, 20, 0);
 		glTexCoord2f(0.0, 0.0);
-		glVertex3d(-bsize / 2, 0, 0);
+		glVertex3d(-10, 0, 0);
 		glEnd();
 		glPopMatrix();
 	}
@@ -249,10 +247,10 @@ void RenderSurface()
 	//glTranslatef(0, -50, 0);
 	glBegin(GL_QUADS);
 	glColor4d(125, 249, 255, 0.3);
-	glVertex3d(40 * 3, -20, 40 * 3);
-	glVertex3d(-40 * 3, -20, 40 * 3);
-	glVertex3d(-40 * 3, -20, -40 * 3);
-	glVertex3d(40 * 3, -20, -40 * 3);
+	glVertex3d(40 * 3 * 2, -20, 40 * 3);
+	glVertex3d(-40 * 3 * 2, -20, 40 * 3);
+	glVertex3d(-40 * 3 * 2, -20, -40 * 3);
+	glVertex3d(40 * 3 * 2, -20, -40 * 3);
 	glEnd();
 }
 
@@ -374,26 +372,25 @@ void init() {
 	glLightfv(GL_LIGHT0, GL_POSITION, l_position);
 	glEnable(GL_LIGHTING);
 	glEnable(GL_LIGHT0);
-	if (q == 0) {
-		for (int i = 0; i < sizeof(ControlPoints) / sizeof(ControlPoints[0]); i++)
-			bsp.ControlPoint(i) = ControlPoints[i];
-		glEnable(GL_DEPTH_TEST);
+	for (int i = 0; i < numBspl; i++)
+		bsp.ControlPoint(i) = ControlPoints[i];
 
-		unsigned char* tex_bits = NULL;
-		int tex_width, tex_height;
-		if ((tex_bits = ConstructTexture(&tex_width, &tex_height)) != NULL) {
-			glGenTextures(1, &texture);
-			glBindTexture(GL_TEXTURE_2D, texture);
-			glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-			glTexImage2D(GL_TEXTURE_2D, 0, 4, tex_width, tex_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, tex_bits);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glEnable(GL_DEPTH_TEST);
+	GLuint texture;
+	unsigned char* tex_bits = NULL;
+	int tex_width, tex_height;
+	if ((tex_bits = ConstructTexture(&tex_width, &tex_height)) != NULL) {
+		glGenTextures(1, &texture);
+		glBindTexture(GL_TEXTURE_2D, texture);
+		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+		glTexImage2D(GL_TEXTURE_2D, 0, 4, tex_width, tex_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, tex_bits);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
-			for (int i = 0; i < sizeof(billbs) / sizeof(billbs[0]); i++)
-				billbs[i] = -area + bsize + 2 * rand() * (area - bsize) / RAND_MAX;
-		}
+		for (int i = 0; i < numbBilbs; i++)
+			billbs[i] = 40 * rand() / RAND_MAX;
 	}
 }
 
@@ -418,6 +415,19 @@ void timer(int i = 0)
 	glutTimerFunc(40, timer, 0);
 }
 
+void Reshape(GLint w, GLint h)
+{
+	Width = w;
+	Height = h;
+	glViewport(0, 0, w, h);
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	glOrtho(-Width / 2, Width / 2, -Height / 2, Height / 2, -150, 150);
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+}
+
+
 void main(int argc, char* argv[])
 {
 	glutInit(&argc, argv);
@@ -425,14 +435,11 @@ void main(int argc, char* argv[])
 	glutInitWindowSize(Width, Height);
 	glutCreateWindow("Funny objects");
 	init();
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-	//glOrtho(-150, 150, -150, 150, -150, 150);
-	glOrtho(- Width / 2, Width / 2, - Height / 2, Height / 2, -150, 150);
 	glutDisplayFunc(Display);
 	glutMouseFunc(Click_mouse);
 	glutMotionFunc(Motion_mouse);
 	glutKeyboardFunc(Key);
+	glutReshapeFunc(Reshape);
 	glutTimerFunc(40, timer, 0);
 	glutMainLoop();
 }
