@@ -7,20 +7,21 @@
 #include"BmpLoad.h"
 #include"Formats.h"
 
+const double PI = 3.14159265358979323846;
+
 GLfloat l_ambient[] = { 0.0, 0.0, 0.0, 1.0 };
 GLfloat l_diffuse[] = { 1.0, 1.0, 1.0, 1.0 };
 GLfloat l_specular[] = { 1.0, 1.0, 1.0, 1.0 };
 GLfloat l_position[] = { -4.0, 4.0, -4.0, 0.0 };
 
-GLint Width = 512, Height = 512;
+// Экран
 int q = 0;
-
+GLint Width = 512, Height = 512;
 double x_angle = 30;
 double y_angle = 0, angle = 0;
 int mouse_x = 0, mouse_y = 0, mouse_button = -1, mouse_state = GLUT_UP;
 
-const double PI = 3.14159265358979323846;
-
+// Сплайн
 double3 ControlPoints[] = {
  double3(0,-0.9, 1.0),
  double3(0.0,-0.9, 1.0),
@@ -29,16 +30,14 @@ double3 ControlPoints[] = {
  double3(0.0,0.5 * 5 , 1.0 * 5),
  double3(0,0.8, 1.0),
  double3(0,0.9, 1.0)
-
 };
-
 int N = 25;
-
 BSpline<double3> bsp(N, OpenBasis, sizeof(ControlPoints) / sizeof(ControlPoints[0]), 3, 0, 1);
 
 const int area = 40;
 const double bsize = 20.0;
 
+// Билборды
 double billbs[3];
 
 GLuint texture;
