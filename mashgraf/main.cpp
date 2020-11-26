@@ -4,10 +4,8 @@
 #include <gl\glew.h>
 #include <gl\glut.h>
 #include "BSpline.h"
-#include "Vector.h"
 #include"BmpLoad.h"
 #include"Formats.h"
-
 
 GLfloat l_ambient[] = { 0.0, 0.0, 0.0, 1.0 };
 GLfloat l_diffuse[] = { 1.0, 1.0, 1.0, 1.0 };
@@ -82,7 +80,6 @@ unsigned char* ConstructTexture(int* w, int* h)
 	return result;
 }
 
-
 void Billboards() {
 	glPushMatrix();
 	glScaled(4, 4, 4);
@@ -155,73 +152,48 @@ void Nurbs()
 	glPopMatrix();
 }
 
-void Cub1()
+void Cub(int x, int y, int z, int size)
 {
 	glPushMatrix();
-	GLfloat c_emissive[4] = { 0.0f, 0.4f, 0.0f, 0.0f };
-	GLfloat c_diffuse[4] = { 0.2f, 0.8f, 0.6f, 0.0f };
-	GLfloat c_specular[4] = { 0.2f, 0.6f, 0.2f, 0.0f };
-	GLfloat c_ambient[4] = { 0.1f, 0.1f, 0.1f, 0.0f };
-	glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, c_emissive);
-	glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, c_diffuse);
-	glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, c_specular);
-	glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, c_ambient);
-	glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 10);
-	glColor3b(1, 0, 0);
-	glutSolidCube(20);
+	glTranslated(x, y, z);
+	glutSolidCube(size);
 	glPopMatrix();
 }
 
-void Cub2()
-{
-	glPushMatrix();
-	GLfloat c_emissive[4] = { 0.0f, 0.4f, 0.0f, 0.0f };
-	GLfloat c_diffuse[4] = { 0.2f, 0.8f, 0.6f, 0.0f };
-	GLfloat c_specular[4] = { 0.2f, 0.6f, 0.2f, 0.0f };
-	GLfloat c_ambient[4] = { 0.1f, 0.1f, 0.1f, 0.0f };
-	glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, c_emissive);
-	glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, c_diffuse);
-	glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, c_specular);
-	glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, c_ambient);
-	glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 10);
-	glTranslated(10, 10, 0);
-	glColor3b(1, 0, 0);
-	glutSolidCube(30);
-	glPopMatrix();
-}
-
-void depth(void (*draw)())
+void depth(void (*draw)(int, int, int, int), int x, int y, int z, int size)
 {
 	glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
 	glEnable(GL_DEPTH_TEST);
 	glDisable(GL_STENCIL_TEST);
 	glDepthFunc(GL_ALWAYS);
 
-	draw();
+	draw(x, y, z, size);
 
 	glDepthFunc(GL_LESS);
 }
-void   inter(void (*first)(), void (*second)(), int face, int test)
+void inter(void (*first)(int, int, int, int), int x1, int y1, int z1, int size1,
+	void (*second)(int, int, int, int), int x2, int y2, int z2, int size2,
+	int face, int test)
 {
 	glEnable(GL_CULL_FACE);
 	glEnable(GL_DEPTH_TEST);
 	glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
 	glCullFace(face);
 
-	first();
+	first(x1, y1, z1, size1);
 
 	glDepthMask(GL_FALSE);
 	glEnable(GL_STENCIL_TEST);
 	glStencilOp(GL_KEEP, GL_KEEP, GL_INCR);
 	glStencilFunc(GL_ALWAYS, 0, 0);
-	glCullFace(GL_BACK);
+	glCullFace(GL_BACK); //не было в inter0
 
-	second();
+	second(x2, y2, z2, size2);
 
 	glStencilOp(GL_KEEP, GL_KEEP, GL_DECR);
 	glCullFace(GL_FRONT);
 
-	second();
+	second(x2, y2, z2, size2);
 
 	glDepthMask(GL_TRUE);
 	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
@@ -229,20 +201,31 @@ void   inter(void (*first)(), void (*second)(), int face, int test)
 	glDisable(GL_DEPTH_TEST);
 	glCullFace(face);
 
-	first();
+	first(x1, y1, z1, size1);
 
 	glDisable(GL_STENCIL_TEST);
 }
 
-void Minus()
+void Minus(int x1, int y1, int z1, int size1, int x2, int y2, int z2, int size2)
 {
 	//glPolygonMode(GL_FRONT_AND_BACK,GL_LINE);
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
 	glDepthFunc(GL_LESS);
-	inter(Cub2, Cub1, GL_FRONT, GL_NOTEQUAL);
-	depth(Cub1);
-	inter(Cub1, Cub2, GL_BACK, GL_EQUAL);
+	inter(Cub, x2, y2, z2, size2, Cub, x1, y1, z1, size1, GL_FRONT, GL_NOTEQUAL);
+	depth(Cub, x1, y1, z1, size1);
+	inter(Cub, x1, y1, z1, size1, Cub, x2, y2, z2, size2, GL_BACK, GL_EQUAL);
+}
+
+void Intersect(int x1, int y1, int z1, int size1, int x2, int y2, int z2, int size2)
+{
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_BACK);
+	glDepthFunc(GL_LESS);
+
+	inter(Cub, x2, y2, z2, size2, Cub, x1, y1, z1, size1, GL_BACK, GL_NOTEQUAL); // тут был интер0
+	depth(Cub, -40, 15, 0, 25);
+	inter(Cub, x1, y1, z1, size1, Cub, x2, y2, z2, size2, GL_BACK, GL_NOTEQUAL); // тут был интер0
 }
 
 void DrawScene()
@@ -261,8 +244,6 @@ void DrawScene()
 	glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, c_ambient);
 	glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 10);
 	glutSolidCube(29);
-	//glutSolidSphere(29, 10, 10);
-	glutSolidIcosahedron();
 	glPopMatrix();
 }
 
@@ -338,7 +319,26 @@ void Display()
 		glPushMatrix();
 		glTranslated(-30, 0, 0);
 		glRotated(angle, 0, 1, 0);
-		Minus();
+		Minus(1, 0, 0, 20, 10, 10, 0, 30);
+		glPopMatrix();
+
+		glClear(GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+		glPushMatrix();
+		glTranslated(30, 0, 0);
+		glRotated(angle, 1, 0, 0);
+		Intersect(-40, 15, 0, 25, -30, 10, 0, 20);
+		glPopMatrix();
+
+		glClear(GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+		glPushMatrix();
+		glTranslated(80, 0, 0);
+		glRotated(angle, 0, 0, 1);
+		Minus(-40, 10, 0, 20, -30, 10, 0, 30);
+		glPopMatrix();
+		glClear(GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+		glPushMatrix();
+		glLoadIdentity();
+
 		glPopMatrix();
 	}
 	glFlush();
@@ -405,7 +405,7 @@ void init() {
 
 void Key(unsigned char key, int x, int y)
 {
-	if (key == '\033') {
+	if (key == '\033') { // escape
 		glutDestroyWindow(glutGetWindow());
 		exit(1);
 	}
@@ -437,6 +437,6 @@ void main(int argc, char* argv[])
 	glutMouseFunc(Click_mouse);
 	glutMotionFunc(Motion_mouse);
 	glutKeyboardFunc(Key);
-	timer();
+	glutTimerFunc(40, timer, 0);
 	glutMainLoop();
 }
