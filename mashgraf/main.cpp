@@ -331,18 +331,26 @@ void Display()
 
 void Motion_mouse(int x, int y)
 {
-	int dx = x - mouse_x;
-	int dy = y - mouse_y;
-	if (mouse_state == GLUT_DOWN) {
-		if (mouse_button == GLUT_LEFT_BUTTON) {
-			y_angle += dx / 3;
-			if (y_angle < 0) y_angle += 360;
-			if (y_angle >= 360) y_angle -= 360;
-			x_angle += dy / 3;
-			if (x_angle < 5) x_angle = 10;
-			if (x_angle > 90) x_angle = 90;
+	if (mouse_state == GLUT_DOWN && mouse_button == GLUT_LEFT_BUTTON) {
+			y_angle += (x - mouse_x) / 3;
+			if (y_angle < 0)
+			{
+				y_angle += 360;
+			}
+			if (y_angle >= 360)
+			{
+				y_angle -= 360;
+			}
+			x_angle += (y - mouse_y) / 3;
+			if (x_angle < 5)
+			{
+				x_angle = 10;
+			}
+			if (x_angle > 90)
+			{
+				x_angle = 90;
+			}
 			Display();
-		}
 	}
 	mouse_x = x;
 	mouse_y = y;
