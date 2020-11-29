@@ -17,43 +17,42 @@ GLfloat l_position[] = { -4.0, 4.0, -4.0, 0.0 };
 // Экран
 int q = 0;
 GLint Width = 512, Height = 512;
-double x_angle = 30, y_angle = 0;
+double x_angle = 30, y_angle = 0; // вращение сцены
 double angle = 0; // Для вращающихся кусков куба
 int mouse_x = 0, mouse_y = 0, mouse_button = -1, mouse_state = GLUT_UP;
 
 // Сплайн
 const int numBspl = 7;
 double3 ControlPoints[] = {
- double3(0,-0.9, 1.0),
- double3(0.0,-0.9, 1.0),
- double3(0.8,-0.8, 1.0),
- double3(0.2,0.3, 1.0),
- double3(0.0,0.5 * 5 , 1.0 * 5),
- double3(0,0.8, 1.0),
- double3(0,0.9, 1.0)
+	 double3(0,-0.9, 1.0),
+	 double3(0.0,-0.9, 1.0),
+	 double3(0.8,-0.8, 1.0),
+	 double3(0.2,0.3, 1.0),
+	 double3(0.0,0.5 * 5 , 1.0 * 5),
+	 double3(0,0.8, 1.0),
+	 double3(0,0.9, 1.0)
 };
 int N = 25;
-BSpline<double3> bsp(N, OpenBasis, numBspl, 3, 0, 1);
+int degree = 4;
+BSpline<double3> bsp(N, OpenBasis, numBspl, degree, 0, 1);
 
 // Билборды
 const int numbBilbs = 3;
 double billbs[numbBilbs];
 int offset = 0;
 
-inline void glVertex(const double2 v)
-{
-	glVertex2d(30 * v.x, 30 * v.y);
-}
-
+// Для сплайнов
 inline void glVertex(const double3 v)
 {
-	glVertex3d(30 * v.x, 30 * v.y, 30 * v.z);
+	int k = 40;
+	glVertex3d(k * v.x, k * v.y, k * v.z);
 }
 
 inline double3 RotateY(double angle, const double2 v)
 {
 	return double3(cos(angle) * v.x, v.y, sin(angle) * v.x);
 }
+
 
 unsigned char* ConstructTexture(int* w, int* h)
 {
@@ -78,8 +77,6 @@ unsigned char* ConstructTexture(int* w, int* h)
 }
 
 void Billboards() {
-	const int area = 40;
-	const double bsize = 20.0;
 
 	glPushMatrix();
 	glMatrixMode(GL_MODELVIEW);
@@ -87,18 +84,17 @@ void Billboards() {
 	glTranslatef(0, 45, 0);
 	glEnable(GL_TEXTURE_2D);
 	glColor4d(1, 1, 1, 1);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	for (int i = 0; i < numbBilbs; i++) {
 		int index = i;
 		if (y_angle < 180) index = numbBilbs - 1 - i;
 		double x = 40 * index / (numbBilbs - 1) + (Width / 2 + offset);
 		double z = billbs[index];
-		glEnable(GL_BLEND);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 		glPushMatrix();
-
 		glLoadIdentity();
-		glTranslated(0, 0, -3 * area);
+		glTranslated(0, 0, -3 * 40);
 		glRotated(x_angle, 1, 0, 0);
 		glRotated(y_angle, 0, 1, 0);
 		glTranslated(x, Height / 4, z);
@@ -106,14 +102,14 @@ void Billboards() {
 		glRotated(-x_angle, 1, 0, 0);
 		glTranslatef(0, 50, 90);
 		glBegin(GL_QUADS);
-		glTexCoord2d(1.0, 0);
-		glVertex3d(10, 0, 0);
-		glTexCoord2d(1.0, 1.0);
-		glVertex3d(bsize / 2, 20, 0);
-		glTexCoord2d(0.0, 1.0);
-		glVertex3d(-10, 20, 0);
-		glTexCoord2f(0.0, 0.0);
-		glVertex3d(-10, 0, 0);
+			glTexCoord2d(1.0, 0);
+			glVertex3d(10, 0, 0);
+			glTexCoord2d(1.0, 1.0);
+			glVertex3d(10, 20, 0);
+			glTexCoord2d(0.0, 1.0);
+			glVertex3d(-10, 20, 0);
+			glTexCoord2f(0.0, 0.0);
+			glVertex3d(-10, 0, 0);
 		glEnd();
 		glPopMatrix();
 	}
@@ -138,11 +134,11 @@ void Nurbs()
 
 	for (int j = 1; j < bsp.GetTesselation() - 2; j++) {
 		glBegin(GL_QUAD_STRIP);
-		for (int i = 0; i <= N; i++) {
-			double phi = (i < N) ? (2 * PI * i / N) : (0);
-			glVertex(RotateY(phi, bsp.GetPoint(j).Perspective()));
-			glVertex(RotateY(phi, bsp.GetPoint(j + 1).Perspective()));
-		}
+			for (int i = 0; i <= N; i++) {
+				double phi = (i < N) ? (2 * PI * i / N) : (0);
+				glVertex(RotateY(phi, bsp.GetPoint(j).Perspective()));
+				glVertex(RotateY(phi, bsp.GetPoint(j + 1).Perspective()));
+			}
 		glEnd();
 	}
 	glPopMatrix();
@@ -156,7 +152,7 @@ void Cub(int x, int y, int z, int size)
 	glPopMatrix();
 }
 
-void depth(void (*draw)(int, int, int, int), int x, int y, int z, int size)
+void resetDepth(void (*draw)(int, int, int, int), int x, int y, int z, int size)
 {
 	glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
 	glEnable(GL_DEPTH_TEST);
@@ -167,8 +163,8 @@ void depth(void (*draw)(int, int, int, int), int x, int y, int z, int size)
 
 	glDepthFunc(GL_LESS);
 }
-void inter(void (*first)(int, int, int, int), int x1, int y1, int z1, int size1,
-	void (*second)(int, int, int, int), int x2, int y2, int z2, int size2,
+void AinB(void (*A)(int, int, int, int), int x1, int y1, int z1, int size1,
+	void (*B)(int, int, int, int), int x2, int y2, int z2, int size2,
 	int face, int test)
 {
 	glEnable(GL_CULL_FACE);
@@ -176,20 +172,20 @@ void inter(void (*first)(int, int, int, int), int x1, int y1, int z1, int size1,
 	glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
 	glCullFace(face);
 
-	first(x1, y1, z1, size1);
+	A(x1, y1, z1, size1);
 
 	glDepthMask(GL_FALSE);
 	glEnable(GL_STENCIL_TEST);
 	glStencilOp(GL_KEEP, GL_KEEP, GL_INCR);
 	glStencilFunc(GL_ALWAYS, 0, 0);
-	glCullFace(GL_BACK); //не было в inter0
+	glCullFace(GL_BACK); 
 
-	second(x2, y2, z2, size2);
+	B(x2, y2, z2, size2);
 
 	glStencilOp(GL_KEEP, GL_KEEP, GL_DECR);
 	glCullFace(GL_FRONT);
 
-	second(x2, y2, z2, size2);
+	B(x2, y2, z2, size2);
 
 	glDepthMask(GL_TRUE);
 	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
@@ -197,7 +193,7 @@ void inter(void (*first)(int, int, int, int), int x1, int y1, int z1, int size1,
 	glDisable(GL_DEPTH_TEST);
 	glCullFace(face);
 
-	first(x1, y1, z1, size1);
+	A(x1, y1, z1, size1);
 
 	glDisable(GL_STENCIL_TEST);
 }
@@ -207,20 +203,17 @@ void Minus(int x1, int y1, int z1, int size1, int x2, int y2, int z2, int size2)
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
 	glDepthFunc(GL_LESS);
-	inter(Cub, x2, y2, z2, size2, Cub, x1, y1, z1, size1, GL_FRONT, GL_NOTEQUAL);
-	depth(Cub, x1, y1, z1, size1);
-	inter(Cub, x1, y1, z1, size1, Cub, x2, y2, z2, size2, GL_BACK, GL_EQUAL);
+	AinB(Cub, x2, y2, z2, size2, Cub, x1, y1, z1, size1, GL_FRONT, GL_NOTEQUAL); // лицевые грани 1го не лежащие по 2м
+	resetDepth(Cub, x1, y1, z1, size1);
+	AinB(Cub, x1, y1, z1, size1, Cub, x2, y2, z2, size2, GL_BACK, GL_EQUAL); // нелицевые 2го лежащие в 1ом
 }
 
 void Intersect(int x1, int y1, int z1, int size1, int x2, int y2, int z2, int size2)
 {
-	glEnable(GL_CULL_FACE);
-	glCullFace(GL_BACK);
 	glDepthFunc(GL_LESS);
-
-	inter(Cub, x2, y2, z2, size2, Cub, x1, y1, z1, size1, GL_BACK, GL_NOTEQUAL); // тут был интер0
-	depth(Cub, -40, 15, 0, 25);
-	inter(Cub, x1, y1, z1, size1, Cub, x2, y2, z2, size2, GL_BACK, GL_NOTEQUAL); // тут был интер0
+	AinB(Cub, x2, y2, z2, size2, Cub, x1, y1, z1, size1, GL_BACK, GL_NOTEQUAL); // то что из одного внутри второго
+	resetDepth(Cub, -40, 15, 0, 25);
+	AinB(Cub, x1, y1, z1, size1, Cub, x2, y2, z2, size2, GL_BACK, GL_NOTEQUAL); // то что из одного внутри второго
 }
 
 void DrawScene()
@@ -244,13 +237,12 @@ void DrawScene()
 
 void RenderSurface()
 {
-	//glTranslatef(0, -50, 0);
 	glBegin(GL_QUADS);
-	glColor4d(125, 249, 255, 0.3);
-	glVertex3d(40 * 3 * 2, -20, 40 * 3);
-	glVertex3d(-40 * 3 * 2, -20, 40 * 3);
-	glVertex3d(-40 * 3 * 2, -20, -40 * 3);
-	glVertex3d(40 * 3 * 2, -20, -40 * 3);
+		glColor4d(125, 249, 255, 0.3);
+		glVertex3d(240, -20, 120);
+		glVertex3d(-240, -20, 120);
+		glVertex3d(-240, -20, -120);
+		glVertex3d(240, -20, -120);
 	glEnd();
 }
 
@@ -400,7 +392,7 @@ void Key(unsigned char key, int x, int y)
 		glutDestroyWindow(glutGetWindow());
 		exit(1);
 	}
-	if (key == ' ' && q == 0) {
+	if (key == ' ' && q == 0) { //Другая сцена
 		q++;
 		init();
 		Display();
