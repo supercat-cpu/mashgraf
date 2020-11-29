@@ -26,7 +26,10 @@
   <ItemGroup>
     <ClInclude Include="BmpLoad.h" />
     <ClInclude Include="BSpline.h" />
+    <ClInclude Include="Constants.h" />
     <ClInclude Include="Formats.h" />
+    <ClInclude Include="Grid4Metaballs.h" />
+    <ClInclude Include="Metaball.h" />
     <ClInclude Include="Vector.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

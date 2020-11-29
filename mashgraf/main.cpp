@@ -6,6 +6,8 @@
 #include "BSpline.h"
 #include"BmpLoad.h"
 #include"Formats.h"
+#include "Grid4Metaballs.h"
+#include "Metaball.h"
 
 const double PI = 3.14159265358979323846;
 
@@ -52,7 +54,6 @@ inline double3 RotateY(double angle, const double2 v)
 {
 	return double3(cos(angle) * v.x, v.y, sin(angle) * v.x);
 }
-
 
 unsigned char* ConstructTexture(int* w, int* h)
 {
@@ -248,6 +249,7 @@ void RenderSurface()
 
 void Display()
 {
+	UpdateMetaBalls();
 	glClearColor(0.0, 1.0, 0.713, 0.0);
 	glClearStencil(GLint(0.0));
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
@@ -293,6 +295,12 @@ void Display()
 	}
 	else {
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+		glPushMatrix();
+		glLoadIdentity();		
+		glTranslatef(0.0f, 100.0f, 0.0f);
+		glScaled(10, 10, 10);
+		cubeGrid.RenderBalls();
+		glPopMatrix();
 
 		glPushMatrix();
 		glTranslated(-30, 20, 0);
@@ -365,7 +373,7 @@ void Click_mouse(int button, int state, int x, int y)
 }
 
 void init() {
-
+	startTime = (double)timeGetTime();
 	glLightfv(GL_LIGHT0, GL_AMBIENT, l_ambient);
 	glLightfv(GL_LIGHT0, GL_DIFFUSE, l_diffuse);
 	glLightfv(GL_LIGHT0, GL_SPECULAR, l_specular);
@@ -392,6 +400,9 @@ void init() {
 		for (int i = 0; i < numbBilbs; i++)
 			billbs[i] = 40 * rand() / RAND_MAX;
 	}
+	for (int i = 0; i < numMetaballs; i++)
+		metaballs[i] = Metaball(double3(0.0f, 0.0f, 0.0f), 5.0f + float(i));
+
 }
 
 void Key(unsigned char key, int x, int y)
