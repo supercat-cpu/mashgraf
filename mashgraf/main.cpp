@@ -14,10 +14,11 @@ const double PI = 3.14159265358979323846;
 GLfloat l_ambient[] = { 0.0, 0.0, 0.0, 1.0 };
 GLfloat l_diffuse[] = { 1.0, 1.0, 1.0, 1.0 };
 GLfloat l_specular[] = { 1.0, 1.0, 1.0, 1.0 };
+
 GLfloat l_position[] = { -4.0, 4.0, -4.0, 0.0 };
 
 // Экран
-int q = 0;
+int sceneNumber = 0;
 GLint Width = 512, Height = 512;
 double x_angle = 30, y_angle = 0; // вращение сцены
 double angle = 0; // Для вращающихся кусков куба
@@ -34,8 +35,8 @@ double3 ControlPoints[] = {
 	 double3(0,0.8, 1.0),
 	 double3(0,0.9, 1.0)
 };
-int N = 25;
-int degree = 4;
+int N = 25; // количество вращений
+int degree = 4; // степень сплайна
 BSpline<double3> bsp(N, OpenBasis, numBspl, degree, 0, 1);
 
 // Билборды
@@ -133,9 +134,9 @@ void Nurbs()
 	glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, t_ambient);
 	glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 10);
 
-	for (int j = 1; j < bsp.GetTesselation() - 2; j++) {
+	for (int j = 1; j < 17; j++) {
 		glBegin(GL_QUAD_STRIP);
-			for (int i = 0; i <= N; i++) {
+			for (int i = 0; i <= bsp.GetTesselation(); i++) {
 				double phi = (i < N) ? (2 * PI * i / N) : (0);
 				glVertex(RotateY(phi, bsp.GetPoint(j).Perspective()));
 				glVertex(RotateY(phi, bsp.GetPoint(j + 1).Perspective()));
@@ -238,6 +239,16 @@ void DrawScene()
 
 void RenderSurface()
 {
+
+	GLfloat c_diffuse[3] = {0.50754, 0.50754, 0.50754 };
+	GLfloat c_specular[3] = { 0.508273, 0.508273, 0.508273 };
+	GLfloat c_ambient[3] = { 0.19225, 0.19225, 0.19225 };
+
+	glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, c_ambient);
+	glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, c_diffuse);
+	glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, c_specular);
+	glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 0.4);
+
 	glBegin(GL_QUADS);
 		glColor4d(125, 249, 255, 0.3);
 		glVertex3d(240, -20, 120);
@@ -258,7 +269,7 @@ void Display()
 	glTranslated(0, 0, -9);
 	glRotated(x_angle, 1, 0, 0);
 	glRotated(y_angle, 0, 1, 0);
-	if (q == 0) {
+	if (sceneNumber == 0) {
 		glEnable(GL_LIGHTING);
 		glLightfv(GL_LIGHT0, GL_POSITION, l_position);
 		glDisable(GL_LIGHTING);
@@ -297,7 +308,7 @@ void Display()
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 		glPushMatrix();
 		glLoadIdentity();		
-		glTranslatef(0.0f, 100.0f, 0.0f);
+		glTranslatef(0.0f, Height/4, 0.0f);
 		glScaled(10, 10, 10);
 		cubeGrid.RenderBalls();
 		glPopMatrix();
@@ -411,8 +422,8 @@ void Key(unsigned char key, int x, int y)
 		glutDestroyWindow(glutGetWindow());
 		exit(1);
 	}
-	if (key == ' ' && q == 0) { //Другая сцена
-		q++;
+	if (key == ' ' && sceneNumber == 0) { //Другая сцена
+		sceneNumber++;
 		init();
 		Display();
 	}
@@ -420,7 +431,7 @@ void Key(unsigned char key, int x, int y)
 
 void timer(int i = 0)
 {
-	angle += 10;
+	angle += 10; // в градусах
 	offset = (offset - 1) % (Width);
 	Display();
 	glutTimerFunc(40, timer, 0);
