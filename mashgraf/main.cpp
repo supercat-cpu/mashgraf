@@ -48,18 +48,6 @@ const int numbBilbs = 3;
 double billbs[numbBilbs];
 int offset = 0;
 
-// Для сплайнов
-inline void glVertex(const double3 v)
-{
-	int k = 40;
-	glVertex3d(k * v.x, k * v.y, k * v.z);
-}
-
-inline double3 RotateY(double angle, const double2 v)
-{
-	return double3(cos(angle) * v.x, v.y, sin(angle) * v.x);
-}
-
 unsigned char* ConstructTexture(int* w, int* h)
 {
 	int width1, height1;
@@ -122,6 +110,18 @@ void Billboards() {
 	glPopMatrix();
 }
 
+// Для сплайнов
+inline void glVertex(const double3 v)
+{
+	int k = 40;
+	glVertex3d(k * v.x, k * v.y, k * v.z);
+}
+
+inline double3 RotateY(double angle, const double2 v)
+{
+	return double3(cos(angle) * v.x, v.y, sin(angle) * v.x);
+}
+
 void DrawBSpline()
 {
 	glPushMatrix();
@@ -148,6 +148,7 @@ void DrawBSpline()
 	glPopMatrix();
 }
 
+// csg
 void Cub(int x, int y, int z, int size)
 {
 	glPushMatrix();
@@ -220,6 +221,7 @@ void Intersect(int x1, int y1, int z1, int size1, int x2, int y2, int z2, int si
 	AinB(Cub, x1, y1, z1, size1, Cub, x2, y2, z2, size2, GL_BACK, GL_NOTEQUAL); // то что из одного внутри второго
 }
 
+// куб и ваза
 void DrawScene()
 {
 	glPushMatrix();
@@ -241,18 +243,8 @@ void DrawScene()
 
 void RenderSurface()
 {
-
-	//GLfloat c_diffuse[3] = {0.50754, 0.50754, 0.50754 };
-	//GLfloat c_specular[3] = { 0.508273, 0.508273, 0.508273 };
-	//GLfloat c_ambient[3] = { 0.19225, 0.19225, 0.19225 };
-
-	//glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, c_ambient);
-	//glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, c_diffuse);
-	//glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, c_specular);
-	//glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 0.4);
-
 	glBegin(GL_QUADS);
-		glColor4d(125, 249, 255, 0.3);
+		glColor4d(125, 120, 255, 0.3);
 		glVertex3d(240, -20, 120);
 		glVertex3d(-240, -20, 120);
 		glVertex3d(-240, -20, -120);
@@ -305,23 +297,47 @@ void Display()
 	}
 	else {
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+		glEnable(GL_LIGHTING);
 		glPushMatrix();
 		glLoadIdentity();		
 		glTranslatef(0.0f, Height/4, 0.0f);
 		glScaled(10, 10, 10);
+		// зеленый
+		GLfloat c_emissive[4] = { 0.0f, 0.4f, 0.0f, 0.0f };
+		GLfloat c_diffuse[4] = { 0.2f, 0.8f, 0.6f, 0.0f };
+		GLfloat c_specular[4] = { 0.2f, 0.6f, 0.2f, 0.0f };
+		GLfloat c_ambient[4] = { 0.1f, 0.1f, 0.1f, 0.0f };
+		glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, c_emissive);
+		glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, c_diffuse);
+		glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, c_specular);
+		glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, c_ambient);
+		glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 10);
 		cubeGrid.RenderBalls();
 		glPopMatrix();
+
+		// красно-рыжий
+		GLfloat c_emissive2[4] = { 1.0f, 0.4f, 0.0f, 0.0f };
+		GLfloat c_diffuse2[4] = { 0.8f, 0.8f, 0.6f, 0.0f };
+		GLfloat c_specular2[4] = { 0.8f, 0.6f, 0.2f, 0.0f };
+		GLfloat c_ambient2[4] = { 0.9f, 0.1f, 0.1f, 0.0f };
+		glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, c_emissive2);
+		glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, c_diffuse2);
+		glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, c_specular2);
+		glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, c_ambient2);
+		glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 10);
 
 		glPushMatrix();
 		glTranslated(-30, 0, 0);
 		glRotated(angle, 0, 1, 0);
+		glScaled(2.5, 2.5, 2.5);
 		Minus(1, 0, 0, 20, 10, 10, 0, 30);
 		glPopMatrix();
 
 		glClear(GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 		glPushMatrix();
-		glTranslated(30, 0, 0);
+		glTranslated(-30, 0, 0);
 		glRotated(angle, 1, 0, 0);
+		glScaled(2.5, 2.5, 2.5);
 		Intersect(-40, 15, 0, 25, -30, 10, 0, 20);
 		glPopMatrix();
 
@@ -329,6 +345,7 @@ void Display()
 		glPushMatrix();
 		glTranslated(80, 0, 0);
 		glRotated(angle, 0, 0, 1);
+		glScaled(2.5, 2.5, 2.5);
 		Minus(-40, 10, 0, 20, -30, 10, 0, 30);
 		glPopMatrix();
 		glClear(GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
@@ -418,7 +435,6 @@ void Key(unsigned char key, int x, int y)
 	}
 	if (key == ' ' && sceneNumber == 0) { //Другая сцена
 		sceneNumber++;
-		init();
 		Display();
 	}
 }
