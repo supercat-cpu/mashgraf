@@ -25,15 +25,19 @@ double angle = 0; // Для вращающихся кусков куба
 int mouse_x = 0, mouse_y = 0, mouse_button = -1, mouse_state = GLUT_UP;
 
 // Сплайн
-const int numBspl = 7;
+const int numBspl = 10;
 double3 ControlPoints[] = {
-	 double3(0,-0.9, 1.0),
-	 double3(0.0,-0.9, 1.0),
-	 double3(0.8,-0.8, 1.0),
-	 double3(0.2,0.3, 1.0),
-	 double3(0.0,0.5 * 5 , 1.0 * 5),
-	 double3(0,0.8, 1.0),
-	 double3(0,0.9, 1.0)
+	 double3(0,   -1, 1.0),
+	 double3(0.0,-0.5, 1.0),
+	 double3(0.8,  0, 1.0),
+	 double3(0.2, 0.5, 1.0),
+	 double3(0.2, 1.0, 1.0),
+	 double3(0.2, 1.5, 1.0),
+	 double3(0.2, 2.0, 1.0),
+	 double3(0.2, 2.5, 1.0),
+	 double3(0,   3.0, 1.0),
+	 double3(0, 3.5, 1.0)
+
 };
 int N = 25; // количество вращений
 int degree = 4; // степень сплайна
@@ -60,8 +64,6 @@ unsigned char* ConstructTexture(int* w, int* h)
 {
 	int width1, height1;
 	unsigned char* tex1 = LoadTrueColorBMPFile("bird.bmp", &width1, &height1);
-	if (!tex1)
-		return NULL;
 	int width2, height2;
 	unsigned char* tex2 = LoadTrueColorBMPFile("abird.bmp", &width2, &height2);
 	unsigned char* result = new unsigned char[width1 * height1 * 4];
@@ -120,7 +122,7 @@ void Billboards() {
 	glPopMatrix();
 }
 
-void Nurbs()
+void DrawBSpline()
 {
 	glPushMatrix();
 	glTranslated(-40, 0, 0);
@@ -134,7 +136,7 @@ void Nurbs()
 	glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, t_ambient);
 	glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 10);
 
-	for (int j = 1; j < 17; j++) {
+	for (int j = 1; j < bsp.GetNumPoints(); j++) {
 		glBegin(GL_QUAD_STRIP);
 			for (int i = 0; i <= bsp.GetTesselation(); i++) {
 				double phi = (i < N) ? (2 * PI * i / N) : (0);
@@ -222,7 +224,7 @@ void DrawScene()
 {
 	glPushMatrix();
 	glTranslatef(-50.0, 50.0, 50.0);
-	Nurbs();
+	DrawBSpline();
 	glTranslatef(100.0, 0.0, -20.0);
 	GLfloat c_emissive[4] = { 0.0f, 0.4f, 0.0f, 0.0f };
 	GLfloat c_diffuse[4] = { 0.2f, 0.8f, 0.6f, 0.0f };
@@ -240,14 +242,14 @@ void DrawScene()
 void RenderSurface()
 {
 
-	GLfloat c_diffuse[3] = {0.50754, 0.50754, 0.50754 };
-	GLfloat c_specular[3] = { 0.508273, 0.508273, 0.508273 };
-	GLfloat c_ambient[3] = { 0.19225, 0.19225, 0.19225 };
+	//GLfloat c_diffuse[3] = {0.50754, 0.50754, 0.50754 };
+	//GLfloat c_specular[3] = { 0.508273, 0.508273, 0.508273 };
+	//GLfloat c_ambient[3] = { 0.19225, 0.19225, 0.19225 };
 
-	glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, c_ambient);
-	glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, c_diffuse);
-	glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, c_specular);
-	glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 0.4);
+	//glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, c_ambient);
+	//glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, c_diffuse);
+	//glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, c_specular);
+	//glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 0.4);
 
 	glBegin(GL_QUADS);
 		glColor4d(125, 249, 255, 0.3);
@@ -272,12 +274,10 @@ void Display()
 	if (sceneNumber == 0) {
 		glEnable(GL_LIGHTING);
 		glLightfv(GL_LIGHT0, GL_POSITION, l_position);
-		glDisable(GL_LIGHTING);
-		glEnable(GL_LIGHTING);
 		DrawScene();
 
 		glEnable(GL_STENCIL_TEST);
-		glStencilFunc(GL_ALWAYS, 1, 1);
+		glStencilFunc(GL_ALWAYS, 1, 0xfffffffff);
 		glStencilOp(GL_ZERO, GL_ZERO, GL_REPLACE);
 		glDepthMask(GL_FALSE);
 		glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
@@ -286,10 +286,9 @@ void Display()
 		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 
 		glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
-		glStencilFunc(GL_EQUAL, 1, 1);
+		glStencilFunc(GL_EQUAL, 1, 0xfffffffff);
 		glPushMatrix();
 		glScaled(1, -1, 1);
-
 		glLightfv(GL_LIGHT0, GL_POSITION, l_position);
 		DrawScene();
 		glPopMatrix();
@@ -311,12 +310,6 @@ void Display()
 		glTranslatef(0.0f, Height/4, 0.0f);
 		glScaled(10, 10, 10);
 		cubeGrid.RenderBalls();
-		glPopMatrix();
-
-		glPushMatrix();
-		glTranslated(-30, 20, 0);
-		glRotated(angle, 0, 1, 1);
-		Nurbs();
 		glPopMatrix();
 
 		glPushMatrix();
@@ -411,6 +404,7 @@ void init() {
 		for (int i = 0; i < numbBilbs; i++)
 			billbs[i] = 40 * rand() / RAND_MAX;
 	}
+
 	for (int i = 0; i < numMetaballs; i++)
 		metaballs[i] = Metaball(double3(0.0f, 0.0f, 0.0f), 5.0f + float(i));
 
@@ -448,7 +442,6 @@ void Reshape(GLint w, GLint h)
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 }
-
 
 void main(int argc, char* argv[])
 {
