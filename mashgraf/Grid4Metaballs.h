@@ -31,8 +31,6 @@ public:
 
 	Grid4Metaballs()
 	{
-		int currentVertex = 0;
-
 		// сетка
 		for (int i = 0; i < gridSize + 1; i++)
 		{
@@ -42,7 +40,6 @@ public:
 				{
 					double3 pos((i*20.0f)/(gridSize)-10.0f, (j*20.0f) / (gridSize)-10.0f, (k*20.0f) / (gridSize)-10.0f);
 					vertices[i][j][k].position = pos;
-					currentVertex++;
 				}
 			}
 		}

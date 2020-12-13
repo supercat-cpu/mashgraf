@@ -168,6 +168,9 @@ void resetDepth(void (*draw)(int, int, int, int), int x, int y, int z, int size)
 
 	glDepthFunc(GL_LESS);
 }
+
+// face - какие грани отбрасываем
+// test GL_NOTEQUAL - то что попало внутрь другого, и наоборот GL_EQUAL то что не попало
 void AinB(void (*A)(int, int, int, int), int x1, int y1, int z1, int size1,
 	void (*B)(int, int, int, int), int x2, int y2, int z2, int size2,
 	int face, int test)
@@ -182,7 +185,7 @@ void AinB(void (*A)(int, int, int, int), int x1, int y1, int z1, int size1,
 	glDepthMask(GL_FALSE);
 	glEnable(GL_STENCIL_TEST);
 	glStencilOp(GL_KEEP, GL_KEEP, GL_INCR);
-	glStencilFunc(GL_ALWAYS, 0, 0);
+	glStencilFunc(GL_ALWAYS, 0, 0xfffffffff);
 	glCullFace(GL_BACK); 
 
 	B(x2, y2, z2, size2);
@@ -194,7 +197,7 @@ void AinB(void (*A)(int, int, int, int), int x1, int y1, int z1, int size1,
 
 	glDepthMask(GL_TRUE);
 	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-	glStencilFunc(test, 0, 1);
+	glStencilFunc(test, 0, 0xfffffffff);
 	glDisable(GL_DEPTH_TEST);
 	glCullFace(face);
 
@@ -205,17 +208,13 @@ void AinB(void (*A)(int, int, int, int), int x1, int y1, int z1, int size1,
 
 void Minus(int x1, int y1, int z1, int size1, int x2, int y2, int z2, int size2)
 {
-	glEnable(GL_CULL_FACE);
-	glCullFace(GL_BACK);
-	glDepthFunc(GL_LESS);
-	AinB(Cub, x2, y2, z2, size2, Cub, x1, y1, z1, size1, GL_FRONT, GL_NOTEQUAL); // лицевые грани 1го не лежащие по 2м
+	AinB(Cub, x2, y2, z2, size2, Cub, x1, y1, z1, size1, GL_FRONT, GL_NOTEQUAL); // нелицевые 2го лежащие в 1ом
 	resetDepth(Cub, x1, y1, z1, size1);
-	AinB(Cub, x1, y1, z1, size1, Cub, x2, y2, z2, size2, GL_BACK, GL_EQUAL); // нелицевые 2го лежащие в 1ом
+	AinB(Cub, x1, y1, z1, size1, Cub, x2, y2, z2, size2, GL_BACK, GL_EQUAL); // лиценвые грани 1го не лежащие во 2м
 }
 
 void Intersect(int x1, int y1, int z1, int size1, int x2, int y2, int z2, int size2)
 {
-	glDepthFunc(GL_LESS);
 	AinB(Cub, x2, y2, z2, size2, Cub, x1, y1, z1, size1, GL_BACK, GL_NOTEQUAL); // то что из одного внутри второго
 	resetDepth(Cub, -40, 15, 0, 25);
 	AinB(Cub, x1, y1, z1, size1, Cub, x2, y2, z2, size2, GL_BACK, GL_NOTEQUAL); // то что из одного внутри второго
